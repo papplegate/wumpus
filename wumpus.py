@@ -40,63 +40,42 @@ class CaveMap:
             }
         )
 
-    def adjacent_caves(self, cave: int):
+    def adjacent_caves(self, cave: int) -> tuple[int, int, int]:
         return self.graph[cave]
 
-    def is_adjacent(self, cave1: int, cave2: int):
+    def is_adjacent(self, cave1: int, cave2: int) -> bool:
         return cave1 in self.adjacent_caves(cave2)
 
 
 @dataclass
 class GameState:
-    # TODO define a constructor method to set the initial state
-    # randomize hazard caves
-
-    state: Literal["PLAYING", "WIN", "LOSE"]
+    status: Literal["PLAY", "WIN", "LOSE"]
     player_cave: int
     arrows: int
     wumpus_cave: int
     pit_caves: list[int]
     bat_caves: list[int]
-    cave_map: CaveMap = CaveMap()
-
-    def hazards_in_adjacent_caves(self):
-        return {
-            "wumpus": self.cave_map.is_adjacent(self.player_cave, self.wumpus_cave),
-            "pit": any(
-                self.cave_map.is_adjacent(self.player_cave, pit_cave)
-                for pit_cave in self.pit_caves
-            ),
-            "bat": any(
-                self.cave_map.is_adjacent(self.player_cave, bat_cave)
-                for bat_cave in self.bat_caves
-            ),
-        }
-
-    def status_line(self):
-        messages = [
-            f"You are in cave {self.player_cave}.",
-            f"Caves {', '.join([str(cave) for cave in self.cave_map.adjacent_caves(self.player_cave)])} are nearby.",
-        ]
-        hazards = self.hazards_in_adjacent_caves()
-        if hazards["wumpus"]:
-            messages.append("There is a terrible smell here.")
-        if hazards["pit"]:
-            messages.append("You feel a draft of air.")
-        if hazards["bat"]:
-            messages.append("There is a faint chittering sound.")
-        return "\n".join(messages)
-
-    def result(self, arrow_path: list[int]):
-        if self.player_cave == self.wumpus_cave:
-            self.status = "LOSE"
-            print("You stumble on the Wumpus in the darkness, and it devours you!")
 
 
 class GameLoop(Cmd):
-    prompt = ""
+    cave_map: CaveMap
+    game_state: GameState
 
-    def do_quit(self, line):
+    def __init__(self):
+        super().__init__()
+        self.prompt = ""
+        self.cave_map = CaveMap()
+        self.game_state = GameState(
+            status="PLAYING",
+            player_cave=1,
+            arrows=5,
+            wumpus_cave=20,
+            pit_caves=[10, 15],
+            bat_caves=[9, 18],
+        )
+        self.intro = self.status_line()
+
+    def do_quit(self, line) -> bool:
         print("Thanks for playing!")
         return True
 
@@ -108,23 +87,47 @@ class GameLoop(Cmd):
         except ValueError:
             print(invalid)
 
-        if safeDestination in state.cave_map.adjacent_caves(state.player_cave):
-            state.player_cave = safeDestination
-            print(state.hazards_in_adjacent_caves())
-            self.prompt = state.status_line() + "\n"
+        if safeDestination in self.cave_map.adjacent_caves(self.game_state.player_cave):
+            self.game_state.player_cave = safeDestination
+            print(self.hazards_in_adjacent_caves())
+            self.prompt = self.status_line() + "\n"
         else:
             print(invalid)
 
     def do_shoot(self, targets): ...
+    
+    def hazards_in_adjacent_caves(self) -> dict[str, bool]:
+        return {
+            "wumpus": self.cave_map.is_adjacent(self.game_state.player_cave, self.game_state.wumpus_cave),
+            "pit": any(
+                self.cave_map.is_adjacent(self.game_state.player_cave, pit_cave)
+                for pit_cave in self.game_state.pit_caves
+            ),
+            "bat": any(
+                self.cave_map.is_adjacent(self.game_state.player_cave, bat_cave)
+                for bat_cave in self.game_state.bat_caves
+            ),
+        }
+
+    def status_line(self) -> str:
+        messages = [
+            f"You are in cave {self.game_state.player_cave}.",
+            f"Caves {', '.join([str(cave) for cave in self.cave_map.adjacent_caves(self.game_state.player_cave)])} are nearby.",
+        ]
+        hazards = self.hazards_in_adjacent_caves()
+        if hazards["wumpus"]:
+            messages.append("There is a terrible smell here.")
+        if hazards["pit"]:
+            messages.append("You feel a draft of air.")
+        if hazards["bat"]:
+            messages.append("There is a faint chittering sound.")
+        return "\n".join(messages)
+
+    def result(self, arrow_path: list[int]):
+        if self.game_state.player_cave == self.game_state.wumpus_cave:
+            self.game_state.status = "LOSE"
+            print("You stumble on the Wumpus in the darkness, and it devours you!")
 
 
 if __name__ == "__main__":
-    state = GameState(
-        state="PLAYING",
-        player_cave=1,
-        arrows=5,
-        wumpus_cave=20,
-        pit_caves=[10, 15],
-        bat_caves=[9, 18],
-    )
-    GameLoop().cmdloop(intro=state.status_line())
+    GameLoop().cmdloop()
