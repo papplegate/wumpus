@@ -2,6 +2,7 @@ from collections.abc import Mapping
 from cmd import Cmd
 from dataclasses import dataclass
 import readline
+from random import choice
 from types import MappingProxyType
 from typing import (
     Literal,
@@ -92,18 +93,26 @@ class GameLoop(Cmd):
 
         if safeDestination in self.cave_map.adjacent_caves(self.game_state.player_cave):
             self.game_state.player_cave = safeDestination
-            print(self.hazards_in_adjacent_caves())
+            self.move_result()
+            if self.game_state.status == "LOSE":
+                return True
             self.prompt = self.status_line() + "\n"
         else:
             print(invalid)
 
     def do_shoot(self, targets): ...
-    
+
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
-            "wumpus": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.wumpus_cave)),
-            "pit": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.pit_caves)),
-            "bat": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.bat_caves)),
+            "wumpus": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.wumpus_cave)
+            ),
+            "pit": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.pit_caves)
+            ),
+            "bat": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.bat_caves)
+            ),
         }
 
     def status_line(self) -> str:
@@ -113,14 +122,30 @@ class GameLoop(Cmd):
         ]
         hazards = self.hazards_in_adjacent_caves()
         if hazards["wumpus"]:
-            messages.append("There is a terrible smell here.")
+            messages.append("You smell the Wumpus.")
         if hazards["pit"]:
-            messages.append("You feel a draft of air.")
+            messages.append("You feel a draft of air from a nearby pit.")
         if hazards["bat"]:
-            messages.append("There is a faint chittering sound.")
+            messages.append("You hear the faint chittering sound of a bat.")
+        messages.append("Your move?")
         return "\n".join(messages)
 
-    def result(self, arrow_path: list[int]):
+    def move_result(self):
+        if self.game_state.player_cave in self.game_state.bat_caves:
+            new_player_cave = choice(list(self.cave_map.graph))
+            self.game_state.bat_caves.remove(self.game_state.player_cave)
+            self.game_state.bat_caves.append(
+                choice(self.cave_map.adjacent_caves(new_player_cave))
+            )
+            self.game_state.player_cave = new_player_cave
+            print(
+                f"A bat picks you up and drops you in cave {self.game_state.player_cave}!"
+            )
+            self.move_result()
+        if self.game_state.player_cave in self.game_state.pit_caves:
+            print("You fall into a pit!")
+            self.game_state.status = "LOSE"
+            return
         if self.game_state.player_cave == self.game_state.wumpus_cave:
             self.game_state.status = "LOSE"
             print("You stumble on the Wumpus in the darkness, and it devours you!")
