@@ -43,8 +43,11 @@ class CaveMap:
     def adjacent_caves(self, cave: int) -> tuple[int, int, int]:
         return self.graph[cave]
 
-    def is_adjacent(self, cave1: int, cave2: int) -> bool:
-        return cave1 in self.adjacent_caves(cave2)
+    def is_adjacent(self, caves: tuple[int, Union[int, Sequence[int]]]) -> bool:
+        if isinstance(caves[1], int):
+            return caves[1] in self.adjacent_caves(caves[0])
+
+        return any(self.is_adjacent((caves[0], cave)) for cave in caves[1])
 
 
 @dataclass
@@ -98,15 +101,9 @@ class GameLoop(Cmd):
     
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
-            "wumpus": self.cave_map.is_adjacent(self.game_state.player_cave, self.game_state.wumpus_cave),
-            "pit": any(
-                self.cave_map.is_adjacent(self.game_state.player_cave, pit_cave)
-                for pit_cave in self.game_state.pit_caves
-            ),
-            "bat": any(
-                self.cave_map.is_adjacent(self.game_state.player_cave, bat_cave)
-                for bat_cave in self.game_state.bat_caves
-            ),
+            "wumpus": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.wumpus_cave)),
+            "pit": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.pit_caves)),
+            "bat": self.cave_map.is_adjacent((self.game_state.player_cave, self.game_state.bat_caves)),
         }
 
     def status_line(self) -> str:
