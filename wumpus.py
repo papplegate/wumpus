@@ -55,7 +55,7 @@ class CaveMap:
 
 @dataclass
 class GameState:
-    status: Literal["PLAY", "WIN", "LOSE"]
+    playing: bool 
     player_cave: int
     arrows: int
     wumpus_cave: int
@@ -72,7 +72,7 @@ class GameLoop(Cmd):
         self.prompt = ""
         self.cave_map = CaveMap()
         self.game_state = GameState(
-            status="PLAYING",
+            playing=True,
             player_cave=1,
             arrows=5,
             wumpus_cave=20,
@@ -103,14 +103,32 @@ class GameLoop(Cmd):
         """))
         super().do_help(arg)
 
-    def do_quit(self, line) -> bool:
-        print("Thanks for playing!")
-        return True
+    def help_move(self):
+        print(dedent("""
+            Move to an adjacent cave.  For example, "move 2" moves to cave
+            2 if it is adjacent to the current cave. 
+        """))
+
+    def help_shoot(self):
+        print(dedent("""
+            Shoot a crooked arrow through up to five connected caves,
+            starting at any cave adjacent to your current position.  For
+            example, "shoot 1 2 3 4 5" shoots an arrow through caves 1-5,
+            assuming that those caves connect to each other and that cave 1
+            is adjacent to your current position.
+
+            Pay attention to how the caves are arranged -- if you try to
+            shoot into a cave that doesn't connect, your arrow will go
+            wild, and it could even hit you!
+        """))
 
     def help_quit(self):
         print(dedent("""
             Quits the game.
         """))
+
+    def do_quit(self, line):
+        self.game_state.playing = False 
 
     def do_move(self, destination: str):
         try:
@@ -125,30 +143,14 @@ class GameLoop(Cmd):
 
         self.game_state.player_cave = safeDestination
         self.move_result()
-        if self.game_state.status == "LOSE":
-            return True
         self.prompt = self.status_line() + "\n"
-
-    def help_move(self):
-        print(dedent("""
-            Move to an adjacent cave.  For example, "move 2" moves to cave
-            2 if it is adjacent to the current cave. 
-        """))
 
     def do_shoot(self, targets): ...
 
-    def help_shoot(self):
-        print(dedent("""
-            Shoot a crooked arrow through up to five connected caves,
-            starting at any cave adjacent to your current position.  For
-            example, "shoot 1 2 3 4 5" shoots an arrow through caves 1-5,
-            assuming that those caves connect to each other and that cave 1
-            is adjacent to your current position.
-
-            Pay attention to how the caves are arranged -- if you try to
-            shoot into a cave that doesn't connect, your arrow will go
-            wild, and it could even hit you!
-        """))
+    def postcmd(self, stop, line):
+        if self.game_state.playing != True:
+            print("Thanks for playing!")
+            return True
 
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
@@ -195,12 +197,11 @@ class GameLoop(Cmd):
             self.move_result()
         if self.game_state.player_cave in self.game_state.pit_caves:
             print("You fall into a pit!")
-            self.game_state.status = "LOSE"
+            self.game_state.playing = False 
             return
         if self.game_state.player_cave == self.game_state.wumpus_cave:
-            self.game_state.status = "LOSE"
+            self.game_state.playing = False 
             print("You stumble on the Wumpus in the darkness, and it devours you!")
-            # looks like a t rex but invisible
 
 
 if __name__ == "__main__":
