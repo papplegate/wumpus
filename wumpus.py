@@ -84,6 +84,37 @@ class GameLoop(Cmd):
             "Type help for help.",
             "\n"
         ]) + self.status_line()
+
+    def hazards_in_adjacent_caves(self) -> dict[str, bool]:
+        return {
+            "wumpus": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.wumpus_cave)
+            ),
+            "pit": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.pit_caves)
+            ),
+            "bat": self.cave_map.is_adjacent(
+                (self.game_state.player_cave, self.game_state.bat_caves)
+            ),
+        }
+
+    def status_line(self) -> str:
+        messages = [
+            f"You are in cave {self.game_state.player_cave}.",
+            f"Caves {', '.join([str(cave) for cave in self.cave_map.adjacent_caves(self.game_state.player_cave)])} are nearby.",
+        ]
+        hazards = self.hazards_in_adjacent_caves()
+        if hazards["wumpus"]:
+            messages.append("You smell the Wumpus.")
+        if hazards["pit"]:
+            messages.append("You feel a draft of air from a nearby pit.")
+        if hazards["bat"]:
+            messages.append("You hear the faint chittering sound of a bat.")
+        messages.extend([
+            f"You have {self.game_state.arrows} arrows.",
+            "Your move?",
+        ])
+        return "\n".join(messages)
     
     def do_help(self, arg):
         print(dedent("""
@@ -132,56 +163,17 @@ class GameLoop(Cmd):
 
     def do_move(self, destination: str):
         try:
-            safeDestination = int(destination)
+            safe_destination = int(destination)
         except ValueError:
-            print(f"Please enter a valid cave.")
+            print("Please enter a valid cave.")
             return
 
-        if safeDestination not in self.cave_map.adjacent_caves(self.game_state.player_cave):
+        if safe_destination not in self.cave_map.adjacent_caves(self.game_state.player_cave):
             print(f"You can't reach cave {destination} from here!")
             return
 
-        self.game_state.player_cave = safeDestination
+        self.game_state.player_cave = safe_destination
         self.move_result()
-        self.prompt = self.status_line() + "\n"
-
-    def do_shoot(self, targets): ...
-
-    def postcmd(self, stop, line):
-        if self.game_state.playing != True:
-            print("Thanks for playing!")
-            return True
-
-    def hazards_in_adjacent_caves(self) -> dict[str, bool]:
-        return {
-            "wumpus": self.cave_map.is_adjacent(
-                (self.game_state.player_cave, self.game_state.wumpus_cave)
-            ),
-            "pit": self.cave_map.is_adjacent(
-                (self.game_state.player_cave, self.game_state.pit_caves)
-            ),
-            "bat": self.cave_map.is_adjacent(
-                (self.game_state.player_cave, self.game_state.bat_caves)
-            ),
-        }
-
-    def status_line(self) -> str:
-        messages = [
-            f"You are in cave {self.game_state.player_cave}.",
-            f"Caves {', '.join([str(cave) for cave in self.cave_map.adjacent_caves(self.game_state.player_cave)])} are nearby.",
-        ]
-        hazards = self.hazards_in_adjacent_caves()
-        if hazards["wumpus"]:
-            messages.append("You smell the Wumpus.")
-        if hazards["pit"]:
-            messages.append("You feel a draft of air from a nearby pit.")
-        if hazards["bat"]:
-            messages.append("You hear the faint chittering sound of a bat.")
-        messages.extend([
-            f"You have {self.game_state.arrows} arrows.",
-            "Your move?",
-        ])
-        return "\n".join(messages)
 
     def move_result(self):
         if self.game_state.player_cave in self.game_state.bat_caves:
@@ -202,6 +194,42 @@ class GameLoop(Cmd):
         if self.game_state.player_cave == self.game_state.wumpus_cave:
             self.game_state.playing = False 
             print("You stumble on the Wumpus in the darkness, and it devours you!")
+
+    def do_shoot(self, targets: str):
+        self.game_state.arrows -= 1
+        arrow_cave = self.game_state.player_cave
+        wild_arrow = False
+        for target in targets.split(" ")[:5]:
+            try:
+                safe_target = int(target)
+            except ValueError:
+                wild_arrow = True
+            print(safe_target, wild_arrow)
+            possible_targets = list(self.cave_map.adjacent_caves(arrow_cave))
+            wild_arrow = (wild_arrow or safe_target not in possible_targets)
+
+            print(possible_targets, wild_arrow)
+
+            if wild_arrow:
+                possible_targets.remove(arrow_cave)
+                arrow_cave = choice(possible_targets)
+            else:
+                arrow_cave = safe_target
+            print(f"The arrow flies to cave {arrow_cave}!")
+
+            if self.game_state.wumpus_cave == arrow_cave:
+                print("The Wumpus is struck by an arrow!")
+                self.game_state.playing = False
+            if self.game_state.player_cave == arrow_cave:
+                print("You are struck by your own arrow!")
+                self.game_state.playing = False
+
+
+    def postcmd(self, stop, line):
+        if self.game_state.playing != True:
+            print("Thanks for playing!")
+            return True
+        self.prompt = self.status_line() + "\n"
 
 
 if __name__ == "__main__":
