@@ -3,9 +3,11 @@ from cmd import Cmd
 from dataclasses import dataclass
 import readline
 from random import choice
+from textwrap import dedent
 from types import MappingProxyType
 from typing import (
     Literal,
+    Optional,
     Sequence,
     Union,
 )
@@ -77,30 +79,76 @@ class GameLoop(Cmd):
             pit_caves=[10, 15],
             bat_caves=[9, 18],
         )
-        self.intro = self.status_line()
+        self.intro = "\n".join([
+            "Welcome to the Wumpus Caves!",
+            "Type help for help.",
+            "\n"
+        ]) + self.status_line()
+    
+    def do_help(self, arg):
+        print(dedent("""
+            Somewhere out there, in the darkness, is the Wumpus --
+            a creature no one has ever seen.  Will your crooked arrows
+            find the Wumpus before it catches you?
+
+            Move from cave to cave, looking for the Wumpus' hiding place
+            and avoiding bats and pits.
+
+            When you've found the Wumpus' cave, shoot a crooked arrow
+            toward that cave.  Aim carefully!
+
+            Win by hitting the Wumpus with a crooked arrow.
+            Lose by falling into a pit, hitting yourself with an arrow,
+            or running out of arrows (you start with five).
+        """))
+        super().do_help(arg)
 
     def do_quit(self, line) -> bool:
         print("Thanks for playing!")
         return True
 
-    def do_move(self, destination: str):
+    def help_quit(self):
+        print(dedent("""
+            Quits the game.
+        """))
 
-        invalid = f"You can't reach that cave from here!"
+    def do_move(self, destination: str):
         try:
             safeDestination = int(destination)
         except ValueError:
-            print(invalid)
+            print(f"Please enter a valid cave.")
+            return
 
-        if safeDestination in self.cave_map.adjacent_caves(self.game_state.player_cave):
-            self.game_state.player_cave = safeDestination
-            self.move_result()
-            if self.game_state.status == "LOSE":
-                return True
-            self.prompt = self.status_line() + "\n"
-        else:
-            print(invalid)
+        if safeDestination not in self.cave_map.adjacent_caves(self.game_state.player_cave):
+            print(f"You can't reach cave {destination} from here!")
+            return
+
+        self.game_state.player_cave = safeDestination
+        self.move_result()
+        if self.game_state.status == "LOSE":
+            return True
+        self.prompt = self.status_line() + "\n"
+
+    def help_move(self):
+        print(dedent("""
+            Move to an adjacent cave.  For example, "move 2" moves to cave
+            2 if it is adjacent to the current cave. 
+        """))
 
     def do_shoot(self, targets): ...
+
+    def help_shoot(self):
+        print(dedent("""
+            Shoot a crooked arrow through up to five connected caves,
+            starting at any cave adjacent to your current position.  For
+            example, "shoot 1 2 3 4 5" shoots an arrow through caves 1-5,
+            assuming that those caves connect to each other and that cave 1
+            is adjacent to your current position.
+
+            Pay attention to how the caves are arranged -- if you try to
+            shoot into a cave that doesn't connect, your arrow will go
+            wild, and it could even hit you!
+        """))
 
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
@@ -127,7 +175,10 @@ class GameLoop(Cmd):
             messages.append("You feel a draft of air from a nearby pit.")
         if hazards["bat"]:
             messages.append("You hear the faint chittering sound of a bat.")
-        messages.append("Your move?")
+        messages.extend([
+            f"You have {self.game_state.arrows} arrows.",
+            "Your move?",
+        ])
         return "\n".join(messages)
 
     def move_result(self):
@@ -139,7 +190,7 @@ class GameLoop(Cmd):
             )
             self.game_state.player_cave = new_player_cave
             print(
-                f"A bat picks you up and drops you in cave {self.game_state.player_cave}!"
+                f"A bat picks you up and drops you in cave {new_player_cave}!"
             )
             self.move_result()
         if self.game_state.player_cave in self.game_state.pit_caves:
@@ -149,6 +200,7 @@ class GameLoop(Cmd):
         if self.game_state.player_cave == self.game_state.wumpus_cave:
             self.game_state.status = "LOSE"
             print("You stumble on the Wumpus in the darkness, and it devours you!")
+            # looks like a t rex but invisible
 
 
 if __name__ == "__main__":
