@@ -55,7 +55,7 @@ class CaveMap:
 
 @dataclass
 class GameState:
-    playing: bool 
+    playing: bool
     player_cave: int
     arrows: int
     wumpus_cave: int
@@ -79,11 +79,15 @@ class GameLoop(Cmd):
             pit_caves=[10, 15],
             bat_caves=[9, 18],
         )
-        self.intro = "\n".join([
-            "Welcome to the Wumpus Caves!",
-            "Type help for help.",
-            "\n"
-        ]) + self.status_line()
+        self.intro = (
+            "\n".join(
+                [
+                    "Welcome to the Wumpus Caves!",
+                    "Type help for help.\n",
+                ]
+            )
+            + self.status_line()
+        )
 
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
@@ -110,14 +114,18 @@ class GameLoop(Cmd):
             messages.append("You feel a draft of air from a nearby pit.")
         if hazards["bat"]:
             messages.append("You hear the faint chittering sound of a bat.")
-        messages.extend([
-            f"You have {self.game_state.arrows} arrows.",
-            "Your move?",
-        ])
+        messages.extend(
+            [
+                f"You have {self.game_state.arrows} arrows.",
+                "Your move?",
+            ]
+        )
         return "\n".join(messages)
-    
+
     def do_help(self, arg):
-        print(dedent("""
+        print(
+            dedent(
+                """
             Somewhere out there, in the darkness, is the Wumpus --
             a creature no one has ever seen.  Will your crooked arrows
             find the Wumpus before it catches you?
@@ -131,17 +139,25 @@ class GameLoop(Cmd):
             Win by hitting the Wumpus with a crooked arrow.
             Lose by falling into a pit, hitting yourself with an arrow,
             or running out of arrows (you start with five).
-        """))
+        """
+            )
+        )
         super().do_help(arg)
 
     def help_move(self):
-        print(dedent("""
+        print(
+            dedent(
+                """
             Move to an adjacent cave.  For example, "move 2" moves to cave
             2 if it is adjacent to the current cave. 
-        """))
+        """
+            )
+        )
 
     def help_shoot(self):
-        print(dedent("""
+        print(
+            dedent(
+                """
             Shoot a crooked arrow through up to five connected caves,
             starting at any cave adjacent to your current position.  For
             example, "shoot 1 2 3 4 5" shoots an arrow through caves 1-5,
@@ -151,15 +167,21 @@ class GameLoop(Cmd):
             Pay attention to how the caves are arranged -- if you try to
             shoot into a cave that doesn't connect, your arrow will go
             wild, and it could even hit you!
-        """))
+        """
+            )
+        )
 
     def help_quit(self):
-        print(dedent("""
+        print(
+            dedent(
+                """
             Quits the game.
-        """))
+        """
+            )
+        )
 
     def do_quit(self, line):
-        self.game_state.playing = False 
+        self.game_state.playing = False
 
     def do_move(self, destination: str):
         try:
@@ -168,14 +190,15 @@ class GameLoop(Cmd):
             print("Please enter a valid cave.")
             return
 
-        if safe_destination not in self.cave_map.adjacent_caves(self.game_state.player_cave):
+        if safe_destination not in self.cave_map.adjacent_caves(
+            self.game_state.player_cave
+        ):
             print(f"You can't reach cave {destination} from here!")
             return
 
         self.game_state.player_cave = safe_destination
-        self.move_result()
 
-    def move_result(self):
+    def player_turn_result(self):
         if self.game_state.player_cave in self.game_state.bat_caves:
             new_player_cave = choice(list(self.cave_map.graph))
             self.game_state.bat_caves.remove(self.game_state.player_cave)
@@ -183,50 +206,56 @@ class GameLoop(Cmd):
                 choice(self.cave_map.adjacent_caves(new_player_cave))
             )
             self.game_state.player_cave = new_player_cave
-            print(
-                f"A bat picks you up and drops you in cave {new_player_cave}!"
-            )
-            self.move_result()
+            print(f"A bat picks you up and drops you in cave {new_player_cave}!")
+            self.player_turn_result()
         if self.game_state.player_cave in self.game_state.pit_caves:
             print("You fall into a pit!")
-            self.game_state.playing = False 
+            self.game_state.playing = False
             return
         if self.game_state.player_cave == self.game_state.wumpus_cave:
-            self.game_state.playing = False 
+            self.game_state.playing = False
             print("You stumble on the Wumpus in the darkness, and it devours you!")
+        if self.game_state.arrows < 1:
+            self.game_state.playing = False
+            print("You have no more arrows and no defense against the Wumpus.")
 
-    def do_shoot(self, targets: str):
-        self.game_state.arrows -= 1
-        arrow_cave = self.game_state.player_cave
-        wild_arrow = False
-        for target in targets.split(" ")[:5]:
+    def do_shoot(self, target_caves: str):
+        arrow_path = [self.game_state.player_cave]
+        for target_cave in target_caves.replace(",", "").split(" ")[:5]:
             try:
-                safe_target = int(target)
+                safe_target_cave = int(target_cave)
             except ValueError:
-                wild_arrow = True
-            print(safe_target, wild_arrow)
-            possible_targets = list(self.cave_map.adjacent_caves(arrow_cave))
-            wild_arrow = (wild_arrow or safe_target not in possible_targets)
+                print("Please enter valid, space-separated target caves.")
+                return
 
-            print(possible_targets, wild_arrow)
+            possible_target_caves = self.cave_map.adjacent_caves(arrow_path[-1])
+            print(arrow_path, possible_target_caves, safe_target_cave)
+            if safe_target_cave in possible_target_caves:
+                arrow_path.append(safe_target_cave)
+                continue
+            arrow_path.append(choice(possible_target_caves))
 
-            if wild_arrow:
-                possible_targets.remove(arrow_cave)
-                arrow_cave = choice(possible_targets)
-            else:
-                arrow_cave = safe_target
-            print(f"The arrow flies to cave {arrow_cave}!")
+        print(
+            f"The arrow flies through caves {', '.join([str(cave) for cave in arrow_path[1:]])}!"
+        )
 
-            if self.game_state.wumpus_cave == arrow_cave:
-                print("The Wumpus is struck by an arrow!")
-                self.game_state.playing = False
-            if self.game_state.player_cave == arrow_cave:
-                print("You are struck by your own arrow!")
-                self.game_state.playing = False
+        if self.game_state.wumpus_cave in arrow_path[1:]:
+            print("The Wumpus is struck by an arrow!")
+            self.game_state.playing = False
+            return
+        if self.game_state.player_cave == arrow_path[1:]:
+            print("You are struck by your own arrow!")
+            self.game_state.playing = False
+            return
 
+        self.game_state.arrows -= 1
+        self.game_state.wumpus_cave = choice(
+            self.cave_map.adjacent_caves(self.game_state.wumpus_cave)
+        )
 
     def postcmd(self, stop, line):
-        if self.game_state.playing != True:
+        self.player_turn_result()
+        if not self.game_state.playing:
             print("Thanks for playing!")
             return True
         self.prompt = self.status_line() + "\n"
