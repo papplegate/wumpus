@@ -182,13 +182,7 @@ class GameLoop(Cmd):
         )
 
     def help_quit(self):
-        print(
-            dedent(
-                """
-            Quits the game.
-        """
-            )
-        )
+        print("Quits the game.")
 
     def do_quit(self, line):
         self.game_state.playing = False
@@ -239,7 +233,6 @@ class GameLoop(Cmd):
                 return
 
             possible_target_caves = self.cave_map.adjacent_caves(arrow_path[-1])
-            print(arrow_path, possible_target_caves, safe_target_cave)
             if safe_target_cave in possible_target_caves:
                 arrow_path.append(safe_target_cave)
                 continue
