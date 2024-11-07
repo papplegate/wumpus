@@ -1,13 +1,10 @@
 from collections.abc import Mapping
 from cmd import Cmd
 from dataclasses import dataclass
-import readline
-from random import choice
+from random import choice, sample
 from textwrap import dedent
 from types import MappingProxyType
 from typing import (
-    Literal,
-    Optional,
     Sequence,
     Union,
 )
@@ -71,13 +68,26 @@ class GameLoop(Cmd):
         super().__init__()
         self.prompt = ""
         self.cave_map = CaveMap()
+        unoccupied_caves = list(self.cave_map.graph.keys())
+        player_cave = choice(unoccupied_caves)
+        unoccupied_caves.remove(player_cave)
+        for cave in self.cave_map.adjacent_caves(player_cave):
+            unoccupied_caves.remove(cave)
+        wumpus_cave = choice(unoccupied_caves)
+        unoccupied_caves.remove(wumpus_cave)
+        pit_caves = sample(unoccupied_caves, 2)
+        for cave in pit_caves:
+            unoccupied_caves.remove(cave)
+        bat_caves = sample(unoccupied_caves, 2)
+        for cave in bat_caves:
+            unoccupied_caves.remove(cave)
         self.game_state = GameState(
             playing=True,
-            player_cave=1,
+            player_cave=player_cave,
             arrows=5,
-            wumpus_cave=20,
-            pit_caves=[10, 15],
-            bat_caves=[9, 18],
+            wumpus_cave=wumpus_cave,
+            pit_caves=pit_caves,
+            bat_caves=bat_caves,
         )
         self.intro = (
             "\n".join(
@@ -221,7 +231,7 @@ class GameLoop(Cmd):
 
     def do_shoot(self, target_caves: str):
         arrow_path = [self.game_state.player_cave]
-        for target_cave in target_caves.replace(",", "").split(" ")[:5]:
+        for target_cave in target_caves.replace(",", "").split("")[:5]:
             try:
                 safe_target_cave = int(target_cave)
             except ValueError:
@@ -236,7 +246,7 @@ class GameLoop(Cmd):
             arrow_path.append(choice(possible_target_caves))
 
         print(
-            f"The arrow flies through caves {', '.join([str(cave) for cave in arrow_path[1:]])}!"
+            f"The arrow flies through cave{'s' if len(arrow_path[1:]) > 1 else ''} {', '.join([str(cave) for cave in arrow_path[1:]])}!"
         )
 
         if self.game_state.wumpus_cave in arrow_path[1:]:
