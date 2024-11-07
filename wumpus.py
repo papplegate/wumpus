@@ -235,6 +235,7 @@ class GameLoop(Cmd):
             if safe_target_cave in possible_target_caves:
                 arrow_path.append(safe_target_cave)
                 continue
+            print(f"Cave {safe_target_cave} does not connect to cave {arrow_path[-1]}.")
             arrow_path.append(choice(possible_target_caves))
 
         print(
