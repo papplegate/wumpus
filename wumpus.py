@@ -70,8 +70,7 @@ class GameLoop(Cmd):
         self.cave_map = CaveMap()
         unoccupied_caves = list(self.cave_map.graph.keys())
         player_cave = choice(unoccupied_caves)
-        unoccupied_caves.remove(player_cave)
-        for cave in self.cave_map.adjacent_caves(player_cave):
+        for cave in list(self.cave_map.adjacent_caves(player_cave)) + [player_cave]:
             unoccupied_caves.remove(cave)
         wumpus_cave = choice(unoccupied_caves)
         unoccupied_caves.remove(wumpus_cave)
@@ -225,7 +224,7 @@ class GameLoop(Cmd):
 
     def do_shoot(self, target_caves: str):
         arrow_path = [self.game_state.player_cave]
-        for target_cave in target_caves.replace(",", "").split("")[:5]:
+        for target_cave in target_caves.replace(",", "").split()[:5]:
             try:
                 safe_target_cave = int(target_cave)
             except ValueError:
