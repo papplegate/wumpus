@@ -52,12 +52,12 @@ class CaveMap:
 
 @dataclass
 class GameState:
-    playing: bool
     player_cave: int
-    arrows: int
     wumpus_cave: int
     pit_caves: list[int]
     bat_caves: list[int]
+    playing: bool = True
+    arrows: int = 5
 
 
 class GameLoop(Cmd):
@@ -68,26 +68,7 @@ class GameLoop(Cmd):
         super().__init__()
         self.prompt = ""
         self.cave_map = CaveMap()
-        unoccupied_caves = list(self.cave_map.graph.keys())
-        player_cave = choice(unoccupied_caves)
-        for cave in [player_cave] + list(self.cave_map.adjacent_caves(player_cave)):
-            unoccupied_caves.remove(cave)
-        wumpus_cave = choice(unoccupied_caves)
-        unoccupied_caves.remove(wumpus_cave)
-        pit_caves = sample(unoccupied_caves, 2)
-        for cave in pit_caves:
-            unoccupied_caves.remove(cave)
-        bat_caves = sample(unoccupied_caves, 2)
-        for cave in bat_caves:
-            unoccupied_caves.remove(cave)
-        self.game_state = GameState(
-            playing=True,
-            player_cave=player_cave,
-            arrows=5,
-            wumpus_cave=wumpus_cave,
-            pit_caves=pit_caves,
-            bat_caves=bat_caves,
-        )
+        self.game_state = GameState(**self.occupied_caves())
         self.intro = (
             "\n".join(
                 [
@@ -97,6 +78,32 @@ class GameLoop(Cmd):
             )
             + self.status_line()
         )
+
+    def occupied_caves(self) -> dict[str, Union[int, list[int]]]:
+        unoccupied_caves = list(self.cave_map.graph.keys())
+
+        player_cave = choice(unoccupied_caves)
+        unoccupied_caves.remove(player_cave)
+
+        for cave in self.cave_map.adjacent_caves(player_cave):
+            unoccupied_caves.remove(cave)
+
+        wumpus_cave = choice(unoccupied_caves)
+        unoccupied_caves.remove(wumpus_cave)
+
+        pit_caves = sample(unoccupied_caves, 2)
+        for cave in pit_caves:
+            unoccupied_caves.remove(cave)
+
+        bat_caves = sample(unoccupied_caves, 2)
+
+        return {
+            "player_cave": player_cave,
+            "wumpus_cave": wumpus_cave,
+            "pit_caves": pit_caves,
+            "bat_caves": bat_caves,
+        }
+
 
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
