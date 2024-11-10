@@ -70,7 +70,7 @@ class GameLoop(Cmd):
         self.cave_map = CaveMap()
         unoccupied_caves = list(self.cave_map.graph.keys())
         player_cave = choice(unoccupied_caves)
-        for cave in list(self.cave_map.adjacent_caves(player_cave)) + [player_cave]:
+        for cave in [player_cave] + list(self.cave_map.adjacent_caves(player_cave)):
             unoccupied_caves.remove(cave)
         wumpus_cave = choice(unoccupied_caves)
         unoccupied_caves.remove(wumpus_cave)
@@ -231,11 +231,15 @@ class GameLoop(Cmd):
                 print("Please enter valid, space-separated target caves.")
                 return
 
-            possible_target_caves = self.cave_map.adjacent_caves(arrow_path[-1])
+            possible_target_caves = list(self.cave_map.adjacent_caves(arrow_path[-1]))
             if safe_target_cave in possible_target_caves:
                 arrow_path.append(safe_target_cave)
                 continue
+
             print(f"Cave {safe_target_cave} does not connect to cave {arrow_path[-1]}.")
+            if len(arrow_path) > 1:
+                # arrow shouldn't go back the way it came if flying wild
+                possible_target_caves.remove(arrow_path[-2])
             arrow_path.append(choice(possible_target_caves))
 
         print(
@@ -251,10 +255,12 @@ class GameLoop(Cmd):
             self.game_state.playing = False
             return
 
-        self.game_state.arrows -= 1
+        print("The Wumpus roars as it moves to another cave!") 
         self.game_state.wumpus_cave = choice(
             self.cave_map.adjacent_caves(self.game_state.wumpus_cave)
         )
+
+        self.game_state.arrows -= 1
 
     def postcmd(self, stop, line):
         self.player_turn_result()
