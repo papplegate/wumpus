@@ -13,7 +13,7 @@ from typing import (
 class CaveMap:
     _network: Mapping[int, tuple[int, int, int]]
 
-    def __init__(self): 
+    def __init__(self):
         self._network = MappingProxyType(
             {
                 1: (2, 5, 8),
@@ -106,7 +106,6 @@ class GameLoop(Cmd):
             "pit_caves": pit_caves,
             "bat_caves": bat_caves,
         }
-
 
     def hazards_in_adjacent_caves(self) -> dict[str, bool]:
         return {
@@ -265,7 +264,7 @@ class GameLoop(Cmd):
             self.game_state.playing = False
             return
 
-        print("The Wumpus roars as it moves to another cave!") 
+        print("The Wumpus roars as it moves to another cave!")
         self.game_state.wumpus_cave = choice(
             self.cave_map.adjacent_caves(self.game_state.wumpus_cave)
         )
