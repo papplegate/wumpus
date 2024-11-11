@@ -242,14 +242,14 @@ class GameLoop(Cmd):
                 return
 
             possible_target_caves = list(self.cave_map.adjacent_caves(arrow_path[-1]))
+            if len(arrow_path) > 1:
+                # arrow shouldn't go back the way it came
+                possible_target_caves.remove(arrow_path[-2])
             if safe_target_cave in possible_target_caves:
                 arrow_path.append(safe_target_cave)
                 continue
 
             print(f"Cave {safe_target_cave} does not connect to cave {arrow_path[-1]}.")
-            if len(arrow_path) > 1:
-                # arrow shouldn't go back the way it came if flying wild
-                possible_target_caves.remove(arrow_path[-2])
             arrow_path.append(choice(possible_target_caves))
 
         print(
