@@ -11,11 +11,10 @@ from typing import (
 
 
 class CaveMap:
-    graph: Mapping[int, tuple[int, int, int]]
+    _network: Mapping[int, tuple[int, int, int]]
 
-    def __init__(self):
-        # https://en.wikipedia.org/wiki/Hunt_the_Wumpus#/media/File:Hunt_the_Wumpus_map.svg
-        self.graph = MappingProxyType(
+    def __init__(self): 
+        self._network = MappingProxyType(
             {
                 1: (2, 5, 8),
                 2: (1, 3, 10),
@@ -40,8 +39,12 @@ class CaveMap:
             }
         )
 
+    @property
+    def network(self) -> Mapping[int, tuple[int, int, int]]:
+        return self._network
+
     def adjacent_caves(self, cave: int) -> tuple[int, int, int]:
-        return self.graph[cave]
+        return self.network[cave]
 
     def is_adjacent(self, caves: tuple[int, Union[int, Sequence[int]]]) -> bool:
         if isinstance(caves[1], int):
@@ -80,7 +83,7 @@ class GameLoop(Cmd):
         )
 
     def occupied_caves(self) -> dict[str, Union[int, list[int]]]:
-        unoccupied_caves = list(self.cave_map.graph.keys())
+        unoccupied_caves = list(self.cave_map.network.keys())
 
         player_cave = choice(unoccupied_caves)
         unoccupied_caves.remove(player_cave)
@@ -210,7 +213,7 @@ class GameLoop(Cmd):
 
     def player_turn_result(self):
         if self.game_state.player_cave in self.game_state.bat_caves:
-            new_player_cave = choice(list(self.cave_map.graph))
+            new_player_cave = choice(self.cave_map.network)
             self.game_state.bat_caves.remove(self.game_state.player_cave)
             self.game_state.bat_caves.append(
                 choice(self.cave_map.adjacent_caves(new_player_cave))
