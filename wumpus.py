@@ -141,25 +141,26 @@ class GameLoop(Cmd):
         return "\n".join(messages)
 
     def do_help(self, arg):
-        print(
-            dedent(
-                """
-            Somewhere out there, in the darkness, is the Wumpus --
-            a creature no one has ever seen.  Will your crooked arrows
-            find the Wumpus before it catches you?
+        if not arg:
+            print(
+                dedent(
+                    """
+                Somewhere out there, in the darkness, is the Wumpus --
+                a creature no one has ever seen.  Will your crooked arrows
+                find the Wumpus before it catches you?
 
-            Move from cave to cave, looking for the Wumpus' hiding place
-            and avoiding bats and pits.
+                Move from cave to cave, looking for the Wumpus' hiding place
+                and avoiding bats and pits.
 
-            When you've found the Wumpus' cave, shoot a crooked arrow
-            toward that cave.  Aim carefully!
+                When you've found the Wumpus' cave, shoot a crooked arrow
+                toward that cave.  Aim carefully!
 
-            Win by hitting the Wumpus with a crooked arrow.
-            Lose by falling into a pit, hitting yourself with an arrow,
-            or running out of arrows (you start with five).
-        """
+                Win by hitting the Wumpus with a crooked arrow.
+                Lose by falling into a pit, hitting yourself with an arrow,
+                or running out of arrows (you start with five).
+            """
+                )
             )
-        )
         super().do_help(arg)
 
     def help_move(self):
