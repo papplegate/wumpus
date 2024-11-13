@@ -222,6 +222,7 @@ class GameLoop(Cmd):
             )
             self.game_state.player_cave = new_player_cave
             print(f"A bat picks you up and drops you in cave {new_player_cave}!")
+            # recursion
             self.player_turn_result()
         if self.game_state.player_cave in self.game_state.pit_caves:
             print("You fall into a pit!")
