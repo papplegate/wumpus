@@ -9,9 +9,10 @@ from typing import (
     Union,
 )
 
+Network = Mapping[int, tuple[int, int, int]]
 
 class CaveMap:
-    _network: Mapping[int, tuple[int, int, int]]
+    _network: Network 
 
     def __init__(self):
         self._network = MappingProxyType(
@@ -40,7 +41,7 @@ class CaveMap:
         )
 
     @property
-    def network(self) -> Mapping[int, tuple[int, int, int]]:
+    def network(self) -> Network:
         return self._network
 
     def adjacent_caves(self, cave: int) -> tuple[int, int, int]:
@@ -50,6 +51,7 @@ class CaveMap:
         if isinstance(caves[1], int):
             return caves[1] in self.adjacent_caves(caves[0])
 
+        # recursion
         return any(self.is_adjacent((caves[0], cave)) for cave in caves[1])
 
 
