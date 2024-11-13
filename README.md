@@ -28,10 +28,11 @@ You then enter a command to interact with the game world.  Commands include `hel
 
 Move from cave to cave, avoiding the pits and bats.  When you smell the Wumpus, note the two caves that you haven't visited that adjoin your current cave.  Back up and search further until you smell the Wumpus in another cave that connects to one of the two candidate Wumpus nests.  Fire an arrow into that cave and enjoy your victory.  To my knowledge, this strategy always works, unless the hazards are very unfavorably arranged.
 
-Alternatively, fire your arrows and hope to hit the Wumpus.  This strategy works best if you map out which caves are connected to each other over several playthroughs.  The player's starting position varies between games, but the arrangement of the caves does not. 
+Alternatively, fire your arrows and hope to hit the Wumpus.  This strategy works best if you map out which caves are connected to each other over several playthroughs.  The hunter's starting position varies between games, but the arrangement of the caves does not. 
 
 ## Differences from the original game
 
-* No hazards are placed in caves adjacent to the player's starting position.
+* No hazards are placed in caves adjacent to the hunter's starting position.
 * Arrows can't turn around and go back to the cave they came from.
-* After moving the player, bats roost in a cave adjacent to the player's new position, rather than returning to their original cave. 
+* Bats roost in a cave adjacent to the hunter's new position after moving the hunter, rather than returning to their original cave. 
+* The Wumpus always kills the hunter when the hunter enters its cave.
