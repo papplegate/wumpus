@@ -35,4 +35,4 @@ Alternatively, fire your arrows and hope to hit the Wumpus.  This strategy works
 * No hazards are placed in caves adjacent to the hunter's starting position.
 * Arrows can't turn around and go back to the cave they came from.
 * Bats roost in a cave adjacent to the hunter's new position after moving the hunter, rather than returning to their original cave. 
-* The Wumpus always kills the hunter when the hunter enters its cave.
+* The Wumpus always kills the hunter if the Wumpus and the hunter occupy the same cave at the end of a turn. 
