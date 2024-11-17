@@ -11,8 +11,9 @@ from typing import (
 
 Network = Mapping[int, tuple[int, int, int]]
 
+
 class CaveMap:
-    _network: Network 
+    _network: Network
 
     def __init__(self):
         self._network = MappingProxyType(
@@ -215,7 +216,9 @@ class GameLoop(Cmd):
 
     def player_turn_result(self):
         if self.game_state.player_cave in self.game_state.bat_caves:
-            new_player_cave = choice(self.cave_map.network)
+            new_player_cave = choice(
+                list(self.cave_map.network).remove(self.game_state.player_cave)
+            )
             self.game_state.bat_caves.remove(self.game_state.player_cave)
             self.game_state.bat_caves.append(
                 choice(self.cave_map.adjacent_caves(new_player_cave))
