@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project reimplements the classic Hunt the Wumpus game in Python.  Hunt the Wumpus comes to us from the era when computer games were typed in by hand from books or sent in the mail on cassettes.
+This project reimplements the classic Hunt the Wumpus game in Python.  Hunt the Wumpus comes to us from the era when computer games were typed in by hand from books or sent in the mail on cassettes.  It was originally written in BASIC by Gregory Yob in 1973.
 
 In Hunt the Wumpus, you play a hunter who seeks to kill a creature called the Wumpus with your arrows.  You move from room to room within a cave system, looking for traces of the Wumpus and avoiding hazards.  The rooms are arranged like the vertices on a dodecahedron (a 20-sided solid) and connected by the dodecahedron's edges.  Thus, each room connects to three others.  Besides the Wumpus, the hazards include pits and bats, which will pick you up and drop you in a different cave.  You win if you shoot an arrow through the caves such that it strikes the Wumpus; you lose if you stumble across the Wumpus, fall down a pit, shoot yourself with your own arrow, or run out of arrows. 
 
@@ -36,3 +36,7 @@ Alternatively, fire your arrows and hope to hit the Wumpus.  This strategy works
 * Arrows can't turn around and go back to the cave they came from.
 * Bats roost in a cave adjacent to the hunter's new position after moving the hunter, rather than returning to their original cave. 
 * The Wumpus always kills the hunter if the Wumpus and the hunter occupy the same cave at the end of a turn. 
+
+## Other materials
+
+`wumpus.bas` contains a retyped version of the BASIC source code for the game, as it appears in People's Computer Company (1977), What to Do After You Hit Return: A Computer Games Book from People's Computer Company, Hayden Book Company.  This source code may contain transcription errors.
